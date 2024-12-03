@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BankAccountController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">bankaccount</a> &gt; <a href="index.source.html" class="el_package">com.example.bankaccount.controller</a> &gt; <span class="el_source">BankAccountController.java</span></div><h1>BankAccountController.java</h1><pre class="source lang-java linenums">package com.example.bankaccount.controller;
+
+import com.example.bankaccount.dto.BankAccountRequestDto;
+import com.example.bankaccount.dto.BankAccountResponseDto;
+import com.example.bankaccount.mapper.BankAccountMapper;
+import com.example.bankaccount.model.BankAccount;
+import com.example.bankaccount.service.BankAccountService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * BankAccountController handles HTTP requests for managing bank accounts.
+ */
+@RestController
+@RequestMapping(&quot;/api/accounts&quot;)
+@Tag(name = &quot;Bank Account&quot;, description = &quot;Operaciones sobre cuentas bancarias&quot;)
+public class BankAccountController {
+
+    private final BankAccountService bankAccountService;
+
+    @Autowired
+<span class="fc" id="L36">    public BankAccountController(BankAccountService bankAccountService) {</span>
+<span class="fc" id="L37">        this.bankAccountService = bankAccountService;</span>
+<span class="fc" id="L38">    }</span>
+
+    @Operation(summary = &quot;Create a new bank account&quot;, description = &quot;Creates a new bank account for a customer.&quot;)
+    @ApiResponses({
+            @ApiResponse(responseCode = &quot;201&quot;, description = &quot;Bank account created successfully&quot;,
+                    content = @Content(mediaType = &quot;application/json&quot;, schema = @Schema(implementation = BankAccountResponseDto.class))),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid request data&quot;, content = @Content)
+    })
+    @PostMapping
+    public ResponseEntity&lt;BankAccountResponseDto&gt; createBankAccount(
+            @Valid @RequestBody @Parameter(description = &quot;Bank account creation details&quot;, required = true) BankAccountRequestDto requestDto) {
+<span class="nc" id="L49">        BankAccount bankAccount = BankAccountMapper.toEntity(requestDto);</span>
+<span class="nc" id="L50">        BankAccount createdAccount = bankAccountService.createBankAccount(bankAccount);</span>
+<span class="nc" id="L51">        BankAccountResponseDto responseDto = BankAccountMapper.toResponseDto(createdAccount);</span>
+<span class="nc" id="L52">        return new ResponseEntity&lt;&gt;(responseDto, HttpStatus.CREATED);</span>
+    }
+
+    @Operation(summary = &quot;Retrieve all bank accounts&quot;, description = &quot;Fetches a list of all bank accounts.&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;List of bank accounts retrieved successfully&quot;,
+            content = @Content(mediaType = &quot;application/json&quot;, schema = @Schema(implementation = BankAccountResponseDto.class)))
+    @GetMapping
+    public ResponseEntity&lt;List&lt;BankAccountResponseDto&gt;&gt; getAllBankAccounts() {
+<span class="nc" id="L60">        List&lt;BankAccount&gt; bankAccounts = bankAccountService.getAllBankAccounts();</span>
+<span class="nc" id="L61">        List&lt;BankAccountResponseDto&gt; responseDtos = bankAccounts.stream()</span>
+<span class="nc" id="L62">                .map(BankAccountMapper::toResponseDto)</span>
+<span class="nc" id="L63">                .collect(Collectors.toList());</span>
+<span class="nc" id="L64">        return new ResponseEntity&lt;&gt;(responseDtos, HttpStatus.OK);</span>
+    }
+
+    @Operation(summary = &quot;Retrieve a bank account by ID&quot;, description = &quot;Fetches details of a specific bank account by its ID.&quot;)
+    @ApiResponses({
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Bank account details retrieved successfully&quot;,
+                    content = @Content(mediaType = &quot;application/json&quot;, schema = @Schema(implementation = BankAccountResponseDto.class))),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Bank account not found&quot;, content = @Content)
+    })
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;BankAccountResponseDto&gt; getBankAccountById(
+            @PathVariable @Parameter(description = &quot;ID of the bank account&quot;, required = true) Long id) {
+<span class="nc" id="L76">        BankAccount bankAccount = bankAccountService.getBankAccountById(id)</span>
+<span class="nc" id="L77">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Bank account not found&quot;));</span>
+<span class="nc" id="L78">        BankAccountResponseDto responseDto = BankAccountMapper.toResponseDto(bankAccount);</span>
+<span class="nc" id="L79">        return new ResponseEntity&lt;&gt;(responseDto, HttpStatus.OK);</span>
+    }
+
+    @Operation(summary = &quot;Deposit an amount&quot;, description = &quot;Deposits a specified amount into a bank account.&quot;)
+    @ApiResponses({
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Deposit successful&quot;,
+                    content = @Content(mediaType = &quot;application/json&quot;, schema = @Schema(implementation = BankAccountResponseDto.class))),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid deposit request&quot;, content = @Content)
+    })
+    @PutMapping(&quot;/{accountId}/deposit&quot;)
+    public ResponseEntity&lt;BankAccountResponseDto&gt; deposit(
+            @PathVariable @Parameter(description = &quot;ID of the bank account&quot;, required = true) Long accountId,
+            @RequestParam @Parameter(description = &quot;Amount to deposit&quot;, required = true) BigDecimal amount) {
+<span class="nc" id="L92">        BankAccount updatedAccount = bankAccountService.deposit(accountId, amount);</span>
+<span class="nc" id="L93">        BankAccountResponseDto responseDto = BankAccountMapper.toResponseDto(updatedAccount);</span>
+<span class="nc" id="L94">        return new ResponseEntity&lt;&gt;(responseDto, HttpStatus.OK);</span>
+    }
+
+    @Operation(summary = &quot;Withdraw an amount&quot;, description = &quot;Withdraws a specified amount from a bank account.&quot;)
+    @ApiResponses({
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Withdrawal successful&quot;,
+                    content = @Content(mediaType = &quot;application/json&quot;, schema = @Schema(implementation = BankAccountResponseDto.class))),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid withdrawal request&quot;, content = @Content)
+    })
+    @PutMapping(&quot;/{accountId}/withdraw&quot;)
+    public ResponseEntity&lt;BankAccountResponseDto&gt; withdraw(
+            @PathVariable @Parameter(description = &quot;ID of the bank account&quot;, required = true) Long accountId,
+            @RequestParam @Parameter(description = &quot;Amount to withdraw&quot;, required = true) BigDecimal amount) {
+<span class="nc" id="L107">        BankAccount updatedAccount = bankAccountService.withdraw(accountId, amount);</span>
+<span class="nc" id="L108">        BankAccountResponseDto responseDto = BankAccountMapper.toResponseDto(updatedAccount);</span>
+<span class="nc" id="L109">        return new ResponseEntity&lt;&gt;(responseDto, HttpStatus.OK);</span>
+    }
+
+    @Operation(summary = &quot;Delete a bank account&quot;, description = &quot;Deletes a bank account by its ID.&quot;)
+    @ApiResponses({
+            @ApiResponse(responseCode = &quot;204&quot;, description = &quot;Bank account deleted successfully&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Bank account not found&quot;, content = @Content)
+    })
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteBankAccount(
+            @PathVariable @Parameter(description = &quot;ID of the bank account&quot;, required = true) Long id) {
+<span class="nc" id="L120">        bankAccountService.deleteBankAccount(id);</span>
+<span class="nc" id="L121">        return new ResponseEntity&lt;&gt;(HttpStatus.NO_CONTENT);</span>
+    }
+
+    @Operation(summary = &quot;Retrieve accounts for a customer&quot;, description = &quot;Fetches all bank accounts for a specific customer.&quot;)
+    @ApiResponses({
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;List of bank accounts retrieved successfully&quot;,
+                    content = @Content(mediaType = &quot;application/json&quot;, schema = @Schema(implementation = BankAccountResponseDto.class))),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;No bank accounts found for the customer&quot;, content = @Content)
+    })
+    @GetMapping(&quot;/customer/{customerId}&quot;)
+    public ResponseEntity&lt;List&lt;BankAccountResponseDto&gt;&gt; getBankAccountsByCustomerId(
+            @PathVariable @Parameter(description = &quot;ID of the customer&quot;, required = true) Long customerId) {
+<span class="nc" id="L133">        List&lt;BankAccount&gt; bankAccounts = bankAccountService.getBankAccountsByCustomerId(customerId);</span>
+<span class="nc" id="L134">        List&lt;BankAccountResponseDto&gt; responseDtos = bankAccounts.stream()</span>
+<span class="nc" id="L135">                .map(BankAccountMapper::toResponseDto)</span>
+<span class="nc" id="L136">                .collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (responseDtos.isEmpty()) {</span>
+<span class="nc" id="L139">            return new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND);</span>
+        }
+
+<span class="nc" id="L142">        return new ResponseEntity&lt;&gt;(responseDtos, HttpStatus.OK);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

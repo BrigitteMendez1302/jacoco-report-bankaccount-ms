@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomerClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">bankaccount</a> &gt; <a href="index.source.html" class="el_package">com.example.bankaccount.client</a> &gt; <span class="el_source">CustomerClient.java</span></div><h1>CustomerClient.java</h1><pre class="source lang-java linenums">package com.example.bankaccount.client;
+
+import com.example.bankaccount.model.Customer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+/**
+ * Service to interact with the Customer microservice.
+ * Provides methods to check the existence of a customer.
+ */
+@Service
+public class CustomerClient {
+
+    private final WebClient webClient;
+
+    /**
+     * Constructor to initialize the CustomerClient with a WebClient instance.
+     *
+     * @param webClient The WebClient instance to communicate with the Customer microservice.
+     */
+    @Autowired
+<span class="fc" id="L23">    public CustomerClient(WebClient webClient) {</span>
+<span class="fc" id="L24">        this.webClient = webClient;</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * Checks if a customer exists in the Customer microservice.
+     *
+     * @param customerId The ID of the customer to verify.
+     * @return true if the customer exists; false otherwise.
+     */
+    public boolean isCustomerExists(Long customerId) {
+        try {
+            // Sends a GET request to the Customer microservice to check if the customer exists
+<span class="nc" id="L36">            return webClient.get()</span>
+<span class="nc" id="L37">                    .uri(&quot;/customers/{id}&quot;, customerId) // Replace {id} with the actual customerId</span>
+<span class="nc" id="L38">                    .retrieve()</span>
+<span class="nc" id="L39">                    .bodyToMono(Customer.class) // Maps the response to a Customer object</span>
+<span class="nc" id="L40">                    .blockOptional() // Blocks and retrieves the response as an Optional</span>
+<span class="nc" id="L41">                    .isPresent(); // Returns true if the customer is found</span>
+<span class="nc" id="L42">        } catch (Exception e) {</span>
+            // In case of an error (e.g., customer not found or communication failure), assume the customer does not exist
+<span class="nc" id="L44">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BankAccountServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">bankaccount</a> &gt; <a href="index.source.html" class="el_package">com.example.bankaccount.service.impl</a> &gt; <span class="el_source">BankAccountServiceImpl.java</span></div><h1>BankAccountServiceImpl.java</h1><pre class="source lang-java linenums">package com.example.bankaccount.service.impl;
+
+import com.example.bankaccount.client.CustomerClient;
+import com.example.bankaccount.model.BankAccount;
+import com.example.bankaccount.repository.BankAccountRepository;
+import com.example.bankaccount.rules.BusinessRule;
+import com.example.bankaccount.rules.CheckingAccountWithdrawalRule;
+import com.example.bankaccount.rules.DepositRule;
+import com.example.bankaccount.rules.SavingsAccountWithdrawalRule;
+import com.example.bankaccount.service.BankAccountService;
+import com.example.bankaccount.service.CustomerValidationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+/**
+ * BankAccountServiceImpl provides the implementation of the business logic for managing bank accounts.
+ * It performs CRUD operations, deposits, withdrawals, and checks account ownership by customer ID.
+ */
+@Service
+public class BankAccountServiceImpl implements BankAccountService {
+
+    private final BankAccountRepository bankAccountRepository; // Repository for accessing bank account data
+    private final CustomerValidationService customerValidationService;
+<span class="fc" id="L31">    private final Map&lt;BankAccount.AccountType, BusinessRule&gt; withdrawalRules = Map.of(</span>
+            BankAccount.AccountType.SAVINGS, new SavingsAccountWithdrawalRule(),
+            BankAccount.AccountType.CHECKING, new CheckingAccountWithdrawalRule()
+    );
+
+    /**
+     * Constructor to initialize the BankAccountServiceImpl with required dependencies.
+     *
+     * @param bankAccountRepository The repository for bank account data.
+     */
+    @Autowired
+<span class="fc" id="L42">    public BankAccountServiceImpl(BankAccountRepository bankAccountRepository, CustomerValidationService customerValidationService) {</span>
+<span class="fc" id="L43">        this.bankAccountRepository = bankAccountRepository;</span>
+<span class="fc" id="L44">        this.customerValidationService = customerValidationService;</span>
+<span class="fc" id="L45">    }</span>
+
+    /**
+     * Creates a new bank account for a customer.
+     *
+     * @param bankAccount The bank account to be created.
+     * @return The created bank account.
+     * @throws IllegalArgumentException If the customer does not exist.
+     */
+    @Override
+    @Transactional
+    public BankAccount createBankAccount(BankAccount bankAccount) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (!customerValidationService.isCustomerExists(bankAccount.getCustomerId())) {</span>
+<span class="fc" id="L58">            throw new IllegalArgumentException(&quot;Customer does not exist.&quot;); // Validate customer existence</span>
+        }
+<span class="fc" id="L60">        return bankAccountRepository.save(bankAccount); // Save and return the created bank account</span>
+    }
+
+    /**
+     * Retrieves all bank accounts.
+     *
+     * @return A list of all bank accounts.
+     */
+    @Override
+    public List&lt;BankAccount&gt; getAllBankAccounts() {
+<span class="fc" id="L70">        return bankAccountRepository.findAll(); // Fetch all bank accounts from the database</span>
+    }
+
+    /**
+     * Retrieves a bank account by its ID.
+     *
+     * @param id The ID of the bank account.
+     * @return An Optional containing the bank account if found.
+     */
+    @Override
+    public Optional&lt;BankAccount&gt; getBankAccountById(Long id) {
+<span class="fc" id="L81">        return bankAccountRepository.findById(id); // Fetch a bank account by its ID</span>
+    }
+
+    /**
+     * Retrieves all bank accounts for a specific customer.
+     *
+     * @param customerId The ID of the customer.
+     * @return A list of bank accounts for the customer.
+     * @throws IllegalArgumentException If the customer does not exist.
+     */
+    @Override
+    public List&lt;BankAccount&gt; getBankAccountsByCustomerId(Long customerId) {
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (!customerValidationService.isCustomerExists(customerId)) {</span>
+<span class="nc" id="L94">            throw new IllegalArgumentException(&quot;Customer does not exist.&quot;); // Validate customer existence</span>
+        }
+<span class="nc" id="L96">        return bankAccountRepository.findByCustomerId(customerId); // Fetch bank accounts by customer ID</span>
+    }
+
+
+    /**
+     * Updates an existing bank account.
+     *
+     * @param id          The ID of the bank account to update.
+     * @param bankAccount The updated bank account details.
+     * @return The updated bank account.
+     * @throws IllegalArgumentException If the customer does not exist.
+     * @throws NoSuchElementException   If the bank account does not exist.
+     */
+    @Override
+    @Transactional
+    public BankAccount updateBankAccount(Long id, BankAccount bankAccount) {
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (!customerValidationService.isCustomerExists(bankAccount.getCustomerId())) {</span>
+<span class="nc" id="L113">            throw new IllegalArgumentException(&quot;Customer does not exist.&quot;); // Validate customer existence</span>
+        }
+<span class="nc" id="L115">        return bankAccountRepository.findById(id)</span>
+<span class="nc" id="L116">                .map(existingAccount -&gt; {</span>
+<span class="nc" id="L117">                    existingAccount.setAccountType(bankAccount.getAccountType()); // Update account type</span>
+<span class="nc" id="L118">                    existingAccount.setBalance(bankAccount.getBalance()); // Update balance</span>
+<span class="nc" id="L119">                    existingAccount.setCustomerId(bankAccount.getCustomerId()); // Update customer ID</span>
+<span class="nc" id="L120">                    return bankAccountRepository.save(existingAccount); // Save updated account</span>
+                })
+<span class="nc" id="L122">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Bank account not found&quot;)); // Handle account not found</span>
+    }
+
+    /**
+     * Deletes a bank account by its ID.
+     *
+     * @param id The ID of the bank account to delete.
+     * @return true if the account was deleted; false otherwise.
+     */
+    @Override
+    @Transactional
+    public boolean deleteBankAccount(Long id) {
+<span class="fc" id="L134">        return bankAccountRepository.findById(id)</span>
+<span class="fc" id="L135">                .map(account -&gt; {</span>
+<span class="fc" id="L136">                    bankAccountRepository.delete(account); // Delete the account</span>
+<span class="fc" id="L137">                    return true; // Return success</span>
+                })
+<span class="fc" id="L139">                .orElse(false); // Return false if the account does not exist</span>
+    }
+
+    /**
+     * Deposits an amount into a bank account.
+     *
+     * @param id     The ID of the bank account.
+     * @param amount The amount to deposit.
+     * @return The updated bank account with the new balance.
+     * @throws IllegalArgumentException If the amount is not positive or the account does not exist.
+     */
+    @Override
+    @Transactional
+    public BankAccount deposit(Long id, BigDecimal amount) {
+<span class="fc" id="L153">        return bankAccountRepository.findById(id)</span>
+<span class="fc" id="L154">                .map(account -&gt; {</span>
+                    // Aplicar la regla de depósito
+<span class="fc" id="L156">                    BusinessRule depositRule = new DepositRule();</span>
+<span class="fc" id="L157">                    depositRule.validate(account, amount);</span>
+
+                    // Actualizar el saldo de la cuenta
+<span class="fc" id="L160">                    account.setBalance(account.getBalance().add(amount));</span>
+<span class="fc" id="L161">                    return bankAccountRepository.save(account);</span>
+                })
+<span class="fc" id="L163">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Bank account not found&quot;));</span>
+    }
+
+
+    /**
+     * Withdraws an amount from a bank account.
+     *
+     * @param id     The ID of the bank account.
+     * @param amount The amount to withdraw.
+     * @return The updated bank account with the new balance.
+     * @throws IllegalArgumentException If the amount is not positive or violates balance rules.
+     * @throws NoSuchElementException   If the bank account does not exist.
+     */
+
+    @Override
+    @Transactional
+    public BankAccount withdraw(Long id, BigDecimal amount) {
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        if (amount.compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
+<span class="nc" id="L181">            throw new IllegalArgumentException(&quot;Withdrawal amount must be positive.&quot;);</span>
+        }
+
+<span class="fc" id="L184">        return bankAccountRepository.findById(id)</span>
+<span class="fc" id="L185">                .map(account -&gt; {</span>
+                    // Seleccionar y aplicar la regla de retiro según el tipo de cuenta
+<span class="fc" id="L187">                    BusinessRule rule = withdrawalRules.get(account.getAccountType());</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                    if (rule == null) {</span>
+<span class="nc" id="L189">                        throw new IllegalArgumentException(&quot;No withdrawal rule defined for this account type.&quot;);</span>
+                    }
+<span class="fc" id="L191">                    rule.validate(account, amount);</span>
+
+                    // Actualizar el saldo de la cuenta
+<span class="fc" id="L194">                    account.setBalance(account.getBalance().subtract(amount));</span>
+<span class="fc" id="L195">                    return bankAccountRepository.save(account);</span>
+                })
+<span class="pc" id="L197">                .orElseThrow(() -&gt; new NoSuchElementException(&quot;Bank account not found&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
